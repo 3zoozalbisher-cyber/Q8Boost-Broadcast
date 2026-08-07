@@ -1,3 +1,15 @@
+import sys
+
+print("Python executable:", sys.executable)
+print("Python version:", sys.version)
+print("Python path:", sys.path)
+
+try:
+    import discord
+    print("Discord imported successfully!")
+except Exception as e:
+    print("Import error:", e)
+    raise
 import os
 import discord
 from discord.ext import commands
