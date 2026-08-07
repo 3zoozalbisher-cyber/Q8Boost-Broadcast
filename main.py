@@ -1,31 +1,37 @@
-import sys
-
-print("Python executable:", sys.executable)
-print("Python version:", sys.version)
-print("Python path:", sys.path)
-
-try:
-    import discord
-    print("Discord imported successfully!")
-except Exception as e:
-    print("Import error:", e)
-    raise
 import os
 import discord
-from discord.ext import commands
+from discord import app_commands
 
 intents = discord.Intents.default()
 intents.members = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+client = discord.Client(intents=intents)
+tree = app_commands.CommandTree(client)
 
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def announce(ctx, *, message):
+
+@client.event
+async def on_ready():
+    await tree.sync()
+    print(f"✅ Logged in as {client.user}")
+    print("✅ Slash commands synced!")
+
+
+@tree.command(
+    name="announce",
+    description="Send a DM announcement to every server member."
+)
+@app_commands.checks.has_permissions(administrator=True)
+async def announce(interaction: discord.Interaction, message: str):
+
+    await interaction.response.send_message(
+        "📨 Sending announcements...",
+        ephemeral=True
+    )
+
     sent = 0
     failed = 0
 
-    for member in ctx.guild.members:
+    for member in interaction.guild.members:
         if member.bot:
             continue
 
@@ -34,14 +40,30 @@ async def announce(ctx, *, message):
                 f"📢 **Q8Boost Announcements**\n\n{message}"
             )
             sent += 1
-        except:
+        except Exception:
             failed += 1
 
-    await ctx.send(f"✅ Done! Sent: {sent} | Failed: {failed}")
+    await interaction.followup.send(
+        f"✅ Finished!\n"
+        f"📨 Sent: **{sent}**\n"
+        f"❌ Failed: **{failed}**",
+        ephemeral=True
+    )
+
 
 @announce.error
-async def announce_error(ctx, error):
-    if isinstance(error, commands.MissingPermissions):
-        await ctx.send("❌ You must be an administrator to use this command.")
+async def announce_error(interaction: discord.Interaction, error):
+    if isinstance(error, app_commands.MissingPermissions):
+        if interaction.response.is_done():
+            await interaction.followup.send(
+                "❌ You must be an administrator to use this command.",
+                ephemeral=True
+            )
+        else:
+            await interaction.response.send_message(
+                "❌ You must be an administrator to use this command.",
+                ephemeral=True
+            )
 
-bot.run(os.getenv("TOKEN"))
+
+client.run(os.getenv("TOKEN"))
