@@ -1,3 +1,4 @@
+import os
 import discord
 from discord.ext import commands
 
@@ -31,4 +32,4 @@ async def announce_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
         await ctx.send("❌ You must be an administrator to use this command.")
 
-bot.run("YOUR_BOT_TOKEN")
+bot.run(os.getenv("TOKEN"))
